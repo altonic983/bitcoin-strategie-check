@@ -10,20 +10,20 @@
 <body class="bg-slate-900 text-slate-100 font-sans">
     <div class="container mx-auto px-4 py-8 max-w-6xl">
         <header class="text-center mb-10">
-            <h1 class="text-4xl font-bold text-yellow-500 italic uppercase tracking-tighter">BTC 5€ Strategie-Center</h1>
-            <p id="last-update" class="text-slate-500 mt-2">Lade Marktdaten...</p>
+            <h1 class="text-4xl font-bold text-yellow-500 uppercase tracking-tighter italic">BTC Strategie-Center</h1>
+            <p id="last-update" class="text-slate-500 mt-2 italic">Lade Daten...</p>
         </header>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
             <div class="bg-slate-800 p-8 rounded-3xl border-2 border-yellow-500/50 shadow-2xl text-center">
-                <span class="text-slate-400 uppercase text-xs font-bold tracking-widest">Aktion Heute</span>
+                <span class="text-slate-400 uppercase text-xs font-bold">Heute investieren?</span>
                 <div id="action-today" class="text-6xl font-black mt-2">---</div>
                 <div id="amount-today" class="text-xl text-slate-300 mt-1">0.00 €</div>
             </div>
             <div class="bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-xl text-center">
-                <span class="text-slate-400 uppercase text-xs font-bold tracking-widest">Strategie-Performance (1J)</span>
+                <span class="text-slate-400 uppercase text-xs font-bold">Backtest Erfolg (1 Jahr)</span>
                 <div id="perf-pct" class="text-6xl font-black mt-2 text-white">0%</div>
-                <p id="perf-details" class="text-slate-500 text-sm mt-1">Simuliere Portfolio...</p>
+                <p id="perf-details" class="text-slate-500 text-sm mt-1 italic italic">Berechne Portfolio...</p>
             </div>
         </div>
 
@@ -40,7 +40,7 @@
                         <th class="p-4">Preis</th>
                         <th class="p-4">RSI</th>
                         <th class="p-4">Score</th>
-                        <th class="p-4 text-right">Aktion</th>
+                        <th class="p-4 text-right">Signal</th>
                     </tr>
                 </thead>
                 <tbody id="table-body" class="divide-y divide-slate-700"></tbody>
@@ -48,59 +48,74 @@
         </div>
 
         <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
-            <h2 class="text-xl font-bold mb-4 text-green-400">Dein 5€ Portfolio-Wachstum (Simulation)</h2>
+            <h2 class="text-xl font-bold mb-4 text-green-400">Vermögensentwicklung (5€ Strategie)</h2>
             <div style="height: 300px;"><canvas id="portfolioChart"></canvas></div>
         </div>
     </div>
 
     <script>
     async function init() {
-        const response = await fetch('./data.json?t=' + Date.now());
-        const data = await response.json();
-        
-        document.getElementById('last-update').innerText = `Daten-Stand: ${data.last_update}`;
-        
-        // Stats befüllen
-        const latest = data.table[0];
-        const actionEl = document.getElementById('action-today');
-        actionEl.innerText = latest.signal;
-        actionEl.className = `text-6xl font-black mt-2 ${latest.signal === 'KAUFEN' ? 'text-green-400' : 'text-red-400'}`;
-        document.getElementById('amount-today').innerText = `Investiere: ${latest.invest_today}`;
-        document.getElementById('perf-pct').innerText = (data.backtest.performance > 0 ? "+" : "") + data.backtest.performance + "%";
-        document.getElementById('perf-details').innerText = `Einsatz: ${data.backtest.invested}€ | Wert: ${data.backtest.current_value}€`;
+        try {
+            const response = await fetch('./data.json?t=' + Date.now());
+            const data = await response.json();
+            
+            document.getElementById('last-update').innerText = `Update: ${data.last_update}`;
+            
+            const latest = data.table[0];
+            const actionEl = document.getElementById('action-today');
+            actionEl.innerText = latest.signal;
+            actionEl.className = `text-6xl font-black mt-2 ${latest.signal === 'KAUFEN' ? 'text-green-400' : 'text-red-400'}`;
+            document.getElementById('amount-today').innerText = `Einsatz: ${latest.invest_today}`;
 
-        // Tech Chart
-        new Chart(document.getElementById('techChart'), {
-            type: 'line',
-            data: {
-                labels: data.labels,
-                datasets: [
-                    { label: 'BTC Preis', data: data.prices, borderColor: '#f59e0b', borderWidth: 3, pointRadius: 0 },
-                    { label: 'MA30', data: data.ma30, borderColor: '#3b82f6', borderWidth: 1, pointRadius: 0 },
-                    { label: 'MA50', data: data.ma50, borderColor: '#10b981', borderWidth: 1, pointRadius: 0 },
-                    { label: 'MA200', data: data.ma200, borderColor: '#ef4444', borderWidth: 2, pointRadius: 0, borderDash: [5,5] }
-                ]
-            },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94a3b8' } } } }
-        });
+            document.getElementById('perf-pct').innerText = (data.backtest.performance > 0 ? "+" : "") + data.backtest.performance + "%";
+            document.getElementById('perf-details').innerText = `Investiert: ${data.backtest.invested}€ | Aktueller Wert: ${data.backtest.current_value}€`;
 
-        // Portfolio Chart
-        new Chart(document.getElementById('portfolioChart'), {
-            type: 'line',
-            data: {
-                labels: data.labels,
-                datasets: [{ label: 'Portfolio Wert (EUR)', data: data.portfolio_history.slice(-30), backgroundColor: 'rgba(34, 197, 94, 0.1)', borderColor: '#22c55e', fill: true, tension: 0.3 }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-        });
+            // Tech Chart (Alle Linien)
+            new Chart(document.getElementById('techChart'), {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [
+                        { label: 'BTC Preis', data: data.prices, borderColor: '#f59e0b', borderWidth: 2, pointRadius: 0 },
+                        { label: '30D MA', data: data.ma30, borderColor: '#3b82f6', borderWidth: 1, pointRadius: 0 },
+                        { label: '50D MA', data: data.ma50, borderColor: '#10b981', borderWidth: 1, pointRadius: 0 },
+                        { label: '200D MA', data: data.ma200, borderColor: '#ef4444', borderWidth: 2, pointRadius: 0, borderDash: [5,5] }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94a3b8' } } } }
+            });
 
-        // Tabelle
-        const tbody = document.getElementById('table-body');
-        data.table.forEach(row => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td class="p-4 text-xs">${row.date}</td><td class="p-4 font-mono font-bold">${row.price.toLocaleString()}€</td><td class="p-4 text-slate-400">${row.rsi}</td><td class="p-4">${row.score}%</td><td class="p-4 text-right ${row.signal === 'KAUFEN' ? 'text-green-400' : 'text-slate-500'}">${row.signal}</td>`;
-            tbody.appendChild(tr);
-        });
+            // Portfolio Chart (Gesamte Historie)
+            new Chart(document.getElementById('portfolioChart'), {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{ 
+                        label: 'Portfolio Wert', 
+                        data: data.portfolio_history, 
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)', 
+                        borderColor: '#22c55e', 
+                        fill: true, 
+                        tension: 0.1,
+                        pointRadius: 0 
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { display: false } },
+                    scales: { x: { display: false }, y: { ticks: { color: '#94a3b8' } } }
+                }
+            });
+
+            // Tabelle
+            const tbody = document.getElementById('table-body');
+            data.table.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td class="p-4">${row.date}</td><td class="p-4 font-mono">${row.price.toLocaleString()}€</td><td class="p-4 text-slate-400">${row.rsi}</td><td class="p-4">${row.score}%</td><td class="p-4 text-right ${row.signal === 'KAUFEN' ? 'text-green-400 font-bold' : 'text-slate-500'}">${row.signal}</td>`;
+                tbody.appendChild(tr);
+            });
+        } catch(e) { console.error("Fehler beim Laden:", e); }
     }
     init();
     </script>
