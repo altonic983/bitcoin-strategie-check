@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitcoin Strategie-Check (BTC/EUR)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-900 text-white font-sans">
+
+    <div class="container mx-auto px-4 py-8 max-w-5xl">
+        <header class="mb-10 text-center">
+            <h1 class="text-4xl font-bold text-yellow-500 mb-2">Bitcoin Strategie-Check</h1>
+            <p id="last-update" class="text-gray-400">Suche nach aktuellen Daten...</p>
+        </header>
+
+        <div class="bg-gray-800 p-4 md:p-6 rounded-xl shadow-2xl mb-10">
+            <h2 class="text-xl font-semibold mb-4 text-gray-200">Kursverlauf & Moving Averages</h2>
+            <div style="height: 400px; position: relative;">
+                <canvas id="bitcoinChart"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-gray-800 p-6 rounded-xl shadow-2xl overflow-x-auto">
+            <h2 class="text-xl font-semibold mb-4 text-gray-200">Historie (Letzte 10 Tage - 12:00 CET)</h2>
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="border-b border-gray-700 text-gray-400 text-sm">
+                        <th class="py-3 px-2">Datum</th>
+                        <th class="py-3 px-2">Kurs (12:00)</th>
+                        <th class="py-3 px-2">30D (20%)</th>
+                        <th class="py-3 px-2">50D (33%)</th>
+                        <th class="py-3 px-2">200D (47%)</th>
+                        <th class="py-3 px-2 font-bold text-white">Empfehlung</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        async function initDashboard() {
+            const statusElement = document.getElementById('last-update');
+            
+            try {
+                // Lade Daten mit Cache-Buster, um immer die neueste Version zu erzwingen
+                const response = await fetch('./data.json?t=' + new Date().getTime());
+                
+                if (!response.ok) {
+                    throw new Error(`Datei nicht gefunden (Status: ${response.status}). Prüfe, ob data.json im Hauptverzeichnis liegt.`);
+                }
+                
+                const data = await response.json();
+                statusElement.innerText = `Letztes Update: ${data.last_update} (Automatisch jede Stunde)`;
+
+                // 1. Chart zeichnen
+                const ctx = document.getElementById('bitcoinChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: [
+                            { label: 'BTC Kurs (EUR)', data: data.prices, borderColor: '#f59e0b', borderWidth: 3, tension: 0.1, fill: false },
+                            { label: '30D MA', data: data.ma30, borderColor: '#3b82f6', borderWidth: 1, pointRadius: 0 },
+                            { label: '50D MA', data: data.ma50, borderColor: '#10b981', borderWidth: 1, pointRadius: 0 },
+                            { label: '200D MA', data: data.ma200, borderColor: '#ef4444', borderWidth: 1, pointRadius: 0 }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { labels: { color: '#fff' } } },
+                        scales: {
+                            y: { grid: { color: '#374151' }, ticks: { color: '#9ca3af' } },
+                            x: { grid: { display: false }, ticks: { color: '#9ca3af' } }
+                        }
+                    }
+                });
+
+                // 2. Tabelle befüllen
+                const tbody = document.getElementById('table-body');
+                tbody.innerHTML = ''; // Platzhalter leeren
+
+                data.table.forEach(row => {
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b border-gray-700 hover:bg-gray-750 transition text-sm";
+                    
+                    const ratingColor = row.rating === "KAUFEN" ? "text-green-400 font-bold" : "text-yellow-500";
+                    
+                    tr.innerHTML = `
+                        <td class="py-4 px-2">${row.date}</td>
+                        <td class="py-4 px-2 font-mono">${row.price_12h.toLocaleString('de-DE')} €</td>
+                        <td class="py-4 px-2 ${row.ma30_ok === 'Ja' ? 'text-green-500' : 'text-red-500'}">${row.ma30_ok}</td>
+                        <td class="py-4 px-2 ${row.ma50_ok === 'Ja' ? 'text-green-500' : 'text-red-500'}">${row.ma50_ok}</td>
+                        <td class="py-4 px-2 ${row.ma200_ok === 'Ja' ? 'text-green-500' : 'text-red-500'}">${row.ma200_ok}</td>
+                        <td class="py-4 px-2 ${ratingColor}">${row.rating} (${row.score}%)</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+            } catch (error) {
+                console.error("Dashboard Error:", error);
+                statusElement.innerHTML = `<span class="text-red-500 font-bold">Fehler: ${error.message}</span>`;
+            }
+        }
+
+        initDashboard();
+    });
+    </script>
+</body>
+</html>
