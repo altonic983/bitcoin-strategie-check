@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitcoin Trend-Analyst (BTC/EUR)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-900 text-white font-sans">
+
+    <div class="container mx-auto px-4 py-8">
+        <header class="mb-10 text-center">
+            <h1 class="text-4xl font-bold text-yellow-500 mb-2">Bitcoin Strategie-Check</h1>
+            <p class="text-gray-400">Automatische Analyse basierend auf 30/50/200-Tage Linien (EUR)</p>
+            <p id="last-update" class="text-xs text-gray-500 mt-2 italic text-sm">Letztes Update: Lade Daten...</p>
+        </header>
+
+        <div class="bg-gray-800 p-6 rounded-xl shadow-2xl mb-10">
+            <h2 class="text-xl font-semibold mb-4 text-gray-200">Kursverlauf & Moving Averages</h2>
+            <canvas id="bitcoinChart" class="w-full h-96"></canvas>
+        </div>
+
+        <div class="bg-gray-800 p-6 rounded-xl shadow-2xl overflow-x-auto">
+            <h2 class="text-xl font-semibold mb-4 text-gray-200">Historie (Letzte 10 Tage - 12:00 CET)</h2>
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="border-b border-gray-700 text-gray-400">
+                        <th class="py-3 px-2">Datum</th>
+                        <th class="py-3 px-2">Kurs (12:00)</th>
+                        <th class="py-3 px-2">30D (20%)</th>
+                        <th class="py-3 px-2">50D (33%)</th>
+                        <th class="py-3 px-2">200D (47%)</th>
+                        <th class="py-3 px-2 font-bold text-white">Kauf-Check</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Hier wird später das Skript eingebaut, das die data.json lädt 
+        // und den Chart sowie die Tabelle befüllt.
+    </script>
+</body>
+</html>
