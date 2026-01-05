@@ -4,65 +4,70 @@ import json
 from datetime import datetime
 
 def fetch_bitcoin_data():
-    # 1. Daten von CoinGecko holen (letzte 365 Tage für 200D MA)
+    # 1. Daten von CoinGecko holen
     url = "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=eur&days=365"
     response = requests.get(url).json()
     
-    # Preise extrahieren
+    # Preise extrahieren und DataFrame erstellen
     df = pd.DataFrame(response['prices'], columns=['timestamp', 'price'])
     df['datetime'] = pd.to_datetime(df['timestamp'], unit='ms')
     
-    # 2. Moving Averages berechnen (Daily Basis)
-    # Wir brauchen tägliche Schlusskurse für saubere SMAs
-    df_daily = df.resample('D', on='datetime').last()
+    # WICHTIG: Datetime als Index setzen für stabiles Resampling
+    df = df.set_index('datetime')
+    
+    # 2. Moving Averages berechnen (Tägliche Basis)
+    df_daily = df['price'].resample('D').last().to_frame()
     df_daily['ma30'] = df_daily['price'].rolling(window=30).mean()
     df_daily['ma50'] = df_daily['price'].rolling(window=50).mean()
     df_daily['ma200'] = df_daily['price'].rolling(window=200).mean()
     
     # 3. 12:00 Uhr Logik für die Tabelle
-    # Wir suchen den Kurs, der 12:00 Uhr am nächsten kommt
-    df['hour'] = df['datetime'].dt.hour
-    df_12h = df[df['hour'] == 12].resample('D', on='datetime').first()
+    # Wir filtern alle Datenpunkte zwischen 11:00 und 13:00 Uhr und nehmen den ersten pro Tag
+    df_12h_raw = df[(df.index.hour >= 11) & (df.index.hour <= 13)]
+    df_12h = df_12h_raw.resample('D').first()
     
     # Zusammenführen für die letzten 10 Tage
     latest_days = []
-    relevant_days = df_daily.tail(10).index
+    # Wir nehmen die letzten 10 Tage, die einen 200D MA haben
+    df_recent = df_daily.dropna(subset=['ma200']).tail(10)
+    relevant_days = df_recent.index
     
     for day in relevant_days:
-        current_price = df_daily.loc[day, 'price']
-        m30 = df_daily.loc[day, 'ma30']
-        m50 = df_daily.loc[day, 'ma50']
-        m200 = df_daily.loc[day, 'ma200']
+        current_price = df_recent.loc[day, 'price']
+        m30 = df_recent.loc[day, 'ma30']
+        m50 = df_recent.loc[day, 'ma50']
+        m200 = df_recent.loc[day, 'ma200']
         
-        # Prüfung: Ist der Kurs ÜBER dem MA?
         check30 = current_price > m30
         check50 = current_price > m50
         check200 = current_price > m200
         
-        # 4. Gewichtete Kauf-Logik (20/33/47)
         score = 0
         if check30: score += 20
         if check50: score += 33
         if check200: score += 47
         
+        # Preis um 12 Uhr finden oder Fallback auf Tagesschluss
+        p12 = df_12h.loc[day, 'price'] if day in df_12h.index else current_price
+        
         latest_days.append({
             "date": day.strftime('%d.%m.%Y'),
-            "price_12h": round(df_12h.loc[day, 'price'] if day in df_12h.index else current_price, 2),
+            "price_12h": round(float(p12), 2),
             "ma30_ok": "Ja" if check30 else "Nein",
             "ma50_ok": "Ja" if check50 else "Nein",
             "ma200_ok": "Ja" if check200 else "Nein",
-            "rating": "KAUFEN" if score >= 70 else "Warten", # Schwellenwert 70%
-            "score": score
+            "rating": "KAUFEN" if score >= 70 else "Warten",
+            "score": int(score)
         })
 
-    # 5. Daten für Chart exportieren (kompletter Verlauf)
+    # 4. Daten für Chart exportieren
     chart_data = {
-        "labels": df_daily.tail(365).index.strftime('%Y-%m-%d').tolist(),
-        "prices": df_daily['price'].tail(365).round(2).tolist(),
-        "ma30": df_daily['ma30'].tail(365).round(2).tolist(),
-        "ma50": df_daily['ma50'].tail(365).round(2).tolist(),
-        "ma200": df_daily['ma200'].tail(365).round(2).tolist(),
-        "table": latest_days[::-1], # Neueste zuerst
+        "labels": df_recent.index.strftime('%Y-%m-%d').tolist(),
+        "prices": df_recent['price'].round(2).tolist(),
+        "ma30": df_recent['ma30'].round(2).tolist(),
+        "ma50": df_recent['ma50'].round(2).tolist(),
+        "ma200": df_recent['ma200'].round(2).tolist(),
+        "table": latest_days[::-1],
         "last_update": datetime.now().strftime('%d.%m.%Y %H:%M')
     }
     
