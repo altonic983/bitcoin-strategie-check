@@ -11,7 +11,7 @@ def calculate_rsi(series, period=14):
     return 100 - (100 / (1+rs))
 
 def fetch_bitcoin_data():
-    # Wir holen 365 Tage für stabiles Backtesting und MAs
+    # Wir laden 365 Tage für ein volles Jahr Analyse und Backtesting
     url = "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=eur&days=365"
     data = requests.get(url).json()
     
@@ -26,7 +26,7 @@ def fetch_bitcoin_data():
     daily['rsi'] = calculate_rsi(daily['price'])
     daily = daily.dropna()
 
-    # Backtesting & 5€ Strategie Entwicklung
+    # Strategie-Simulation: 5€ bei Score >= 80
     invested_total = 0
     btc_accumulated = 0
     portfolio_values = []
@@ -34,8 +34,9 @@ def fetch_bitcoin_data():
     table_list = []
     for day, row in daily.iterrows():
         p, m30, m50, m200, rsi = row['price'], row['ma30'], row['ma50'], row['ma200'], row['rsi']
-        score = (50 if p > m200 else 0) + (30 if p > m50 else 0) + (20 if rsi < 60 else 0)
         
+        # Scoring-Logik
+        score = (50 if p > m200 else 0) + (30 if p > m50 else 0) + (20 if rsi < 60 else 0)
         signal = "KAUFEN" if score >= 80 else "WARTEN"
         investment = 5.0 if signal == "KAUFEN" else 0.0
         
@@ -43,7 +44,7 @@ def fetch_bitcoin_data():
             invested_total += investment
             btc_accumulated += (investment / p)
         
-        # Aktueller Wert des Portfolios zu diesem Zeitpunkt
+        # Historischer Portfolio-Wert für den zweiten Chart
         portfolio_values.append(round(btc_accumulated * p, 2))
             
         table_list.append({
@@ -58,15 +59,14 @@ def fetch_bitcoin_data():
     current_val = btc_accumulated * daily['price'].iloc[-1]
     perf = ((current_val / invested_total) - 1) * 100 if invested_total > 0 else 0
 
-    # Output für Frontend
     output = {
         "labels": daily.index.strftime('%d.%m').tolist(),
         "prices": daily['price'].round(2).tolist(),
         "ma30": daily['ma30'].round(2).tolist(),
         "ma50": daily['ma50'].round(2).tolist(),
         "ma200": daily['ma200'].round(2).tolist(),
-        "portfolio_history": portfolio_values, # Daten für den 2. Chart
-        "table": table_list[::-1][:10],
+        "portfolio_history": portfolio_values,
+        "table": table_list[::-1][:10], # Nur letzte 10 für die Tabelle
         "backtest": {
             "invested": round(invested_total, 2),
             "current_value": round(current_val, 2),
