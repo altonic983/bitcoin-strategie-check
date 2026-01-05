@@ -3,116 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bitcoin Strategie Pro</title>
+    <title>Bitcoin 5€ Strategie</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 font-sans">
-
-    <div class="container mx-auto px-4 py-8 max-w-6xl">
-        <header class="mb-8 flex flex-col md:flex-row justify-between items-center border-b border-slate-700 pb-6">
-            <div>
-                <h1 class="text-3xl font-bold text-yellow-500">Bitcoin Strategie <span class="text-white font-light text-xl">PRO</span></h1>
-                <p id="last-update" class="text-slate-400 text-sm italic">Synchronisiere Daten...</p>
-            </div>
-            <div class="mt-4 md:mt-0 bg-slate-800 px-4 py-2 rounded-lg border border-slate-700">
-                <span class="text-xs uppercase text-slate-500 block">Markt-Status</span>
-                <span id="global-rating" class="font-bold text-lg text-yellow-500">Analyse läuft...</span>
-            </div>
+    <div class="container mx-auto px-4 py-8 max-w-5xl">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-bold text-yellow-500">Bitcoin 5€ Assistent</h1>
+            <p id="last-update" class="text-slate-400 mt-2 italic">Lade Daten...</p>
         </header>
 
-        <div class="bg-slate-800 p-6 rounded-2xl shadow-xl mb-8 border border-slate-700">
-            <div style="height: 400px; position: relative;">
-                <canvas id="bitcoinChart"></canvas>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+            <div class="bg-slate-800 p-8 rounded-3xl border-2 border-yellow-500/50 shadow-2xl text-center">
+                <span class="text-slate-400 uppercase text-sm tracking-widest">Heutige Aktion</span>
+                <div id="action-today" class="text-5xl font-black mt-2 tracking-tighter">---</div>
+                <div id="amount-today" class="text-xl text-slate-300 mt-1">0.00 €</div>
+            </div>
+            <div class="bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-xl text-center">
+                <span class="text-slate-400 uppercase text-sm tracking-widest">Backtest Erfolg</span>
+                <div id="perf-pct" class="text-5xl font-black mt-2 text-white">0%</div>
+                <p id="perf-details" class="text-slate-400 text-sm mt-1 italic">Simulation wird geladen...</p>
             </div>
         </div>
 
-        <div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 overflow-hidden">
-            <div class="p-6 border-b border-slate-700">
-                <h2 class="text-xl font-semibold">Multi-Indikator Historie</h2>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead class="bg-slate-750 text-slate-400 text-xs uppercase">
-                        <tr>
-                            <th class="py-4 px-4">Datum</th>
-                            <th class="py-4 px-4">Kurs (EUR)</th>
-                            <th class="py-4 px-4">RSI (14)</th>
-                            <th class="py-4 px-4">Abst. Hoch</th>
-                            <th class="py-4 px-4 text-center text-blue-400">MA200 (50%)</th>
-                            <th class="py-4 px-4">Score</th>
-                            <th class="py-4 px-4">Signal</th>
-                        </tr>
-                    </thead>
-                    <tbody id="table-body" class="divide-y divide-slate-700">
-                        </tbody>
-                </table>
-            </div>
+        <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-xl">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-700 text-slate-300 uppercase text-xs">
+                    <tr>
+                        <th class="p-4">Datum</th>
+                        <th class="p-4">Kurs</th>
+                        <th class="p-4">RSI</th>
+                        <th class="p-4">Score</th>
+                        <th class="p-4 text-right">Aktion</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body" class="divide-y divide-slate-700 text-slate-200"></tbody>
+            </table>
         </div>
     </div>
 
     <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-        try {
-            const response = await fetch('./data.json?t=' + Date.now());
-            const data = await response.json();
+    async function loadDashboard() {
+        const response = await fetch('./data.json?t=' + Date.now());
+        const data = await response.json();
+        
+        document.getElementById('last-update').innerText = `Stand: ${data.last_update}`;
+        
+        const latest = data.table[0];
+        const actionEl = document.getElementById('action-today');
+        actionEl.innerText = latest.signal;
+        actionEl.className = `text-5xl font-black mt-2 tracking-tighter ${latest.signal === 'KAUFEN' ? 'text-green-400' : 'text-red-400'}`;
+        document.getElementById('amount-today').innerText = latest.invest_today + " investieren";
 
-            document.getElementById('last-update').innerText = `Update: ${data.last_update}`;
-            document.getElementById('global-rating').innerText = data.table[0].rating;
+        document.getElementById('perf-pct').innerText = (data.backtest.performance > 0 ? "+" : "") + data.backtest.performance + "%";
+        document.getElementById('perf-details').innerText = `Aus ${data.backtest.invested}€ wurden ${data.backtest.current_value}€`;
 
-            // Chart
-            const ctx = document.getElementById('bitcoinChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: data.labels,
-                    datasets: [
-                        { label: 'BTC', data: data.prices, borderColor: '#f59e0b', borderWidth: 3, tension: 0.2, pointRadius: 3 },
-                        { label: 'MA200 (Trend)', data: data.ma200, borderColor: '#ef4444', borderWidth: 2, pointRadius: 0, borderDash: [5, 5] },
-                        { label: 'MA50', data: data.ma50, borderColor: '#10b981', borderWidth: 1, pointRadius: 0 }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#94a3b8' } } },
-                    scales: {
-                        y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b' } },
-                        x: { grid: { display: false }, ticks: { color: '#64748b' } }
-                    }
-                }
-            });
-
-            // Tabelle
-            const tbody = document.getElementById('table-body');
-            data.table.forEach(row => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-700/50 transition cursor-default";
-                
-                // RSI Color Logic
-                let rsiColor = "text-slate-100";
-                if(row.rsi > 70) rsiColor = "text-red-400";
-                if(row.rsi < 30) rsiColor = "text-green-400";
-
-                // Signal Color
-                const sigBg = row.rating === "KAUFEN" ? "bg-green-500/20 text-green-400" : 
-                              row.rating === "HALTEN" ? "bg-yellow-500/20 text-yellow-400" : 
-                              "bg-red-500/20 text-red-400";
-
-                tr.innerHTML = `
-                    <td class="py-4 px-4 text-sm">${row.date}</td>
-                    <td class="py-4 px-4 font-mono font-bold">${row.price.toLocaleString('de-DE')} €</td>
-                    <td class="py-4 px-4 ${rsiColor}">${row.rsi}</td>
-                    <td class="py-4 px-4 text-slate-400 text-sm">${row.ath_dist}%</td>
-                    <td class="py-4 px-4 text-center">${row.ma200_ok === 'Ja' ? '✅' : '❌'}</td>
-                    <td class="py-4 px-4 font-semibold">${row.score}%</td>
-                    <td class="py-4 px-4"><span class="px-2 py-1 rounded text-xs font-bold ${sigBg}">${row.rating}</span></td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-        } catch (e) { console.error(e); }
-    });
+        const tbody = document.getElementById('table-body');
+        data.table.forEach(row => {
+            const tr = document.createElement('tr');
+            const color = row.signal === 'KAUFEN' ? 'text-green-400 font-bold' : 'text-slate-500';
+            tr.innerHTML = `
+                <td class="p-4">${row.date}</td>
+                <td class="p-4 font-mono">${row.price.toLocaleString()} €</td>
+                <td class="p-4">${row.rsi}</td>
+                <td class="p-4">${row.score}%</td>
+                <td class="p-4 text-right ${color}">${row.signal} (${row.invest_today})</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+    loadDashboard();
     </script>
 </body>
 </html>
