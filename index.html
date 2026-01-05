@@ -3,125 +3,145 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BTC 5€ Strategie</title>
+    <title>BTC Strategie-Center</title>
 
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="BTC 5€">
     <link rel="apple-touch-icon" href="https://cryptologos.cc/logos/bitcoin-btc-logo.png">
-    <meta name="mobile-web-app-capable" content="yes">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
     <style>
-        /* Verhindert das "Ziehen" der Seite auf dem iPhone */
         body { overscroll-behavior-y: contain; }
+        .handy-shadow { shadow-2xl }
+        @media (max-width: 768px) { .mobile-only { display: flex; } .desktop-only { display: none; } }
+        @media (min-width: 769px) { .mobile-only { display: none; } .desktop-only { display: block; } }
     </style>
 </head>
 <body class="bg-slate-900 text-slate-100 font-sans">
-    <div class="container mx-auto px-4 py-8 max-w-5xl">
-        <header class="text-center mb-8 pt-4">
-            <h1 class="text-3xl font-black text-yellow-500 uppercase tracking-tighter italic">BTC Strategie-App</h1>
-            <p id="last-update" class="text-slate-500 text-xs mt-1 uppercase tracking-widest">Initialisiere...</p>
+    <div class="container mx-auto px-4 py-6 max-w-6xl">
+        
+        <header class="text-center mb-6">
+            <h1 class="text-3xl md:text-5xl font-black text-yellow-500 italic uppercase tracking-tighter">BTC 5€ Strategie</h1>
+            <p id="last-update" class="text-slate-500 text-[10px] md:text-sm mt-1 uppercase tracking-widest italic">Lade Echtzeitdaten...</p>
         </header>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-            <div class="bg-slate-800 p-6 rounded-3xl border-2 border-yellow-500/50 shadow-2xl text-center">
-                <span class="text-slate-400 uppercase text-[10px] font-bold tracking-widest">Empfehlung</span>
-                <div id="action-today" class="text-5xl font-black mt-1">---</div>
-                <div id="amount-today" class="text-lg text-slate-300">0.00 €</div>
+            <div class="bg-slate-800 p-8 rounded-3xl border-2 border-yellow-500 shadow-2xl text-center">
+                <span class="text-slate-400 uppercase text-xs font-bold tracking-widest">Aktion Heute</span>
+                <div id="action-today" class="text-6xl md:text-7xl font-black mt-2 tracking-tighter animate-pulse">---</div>
+                <div id="amount-today" class="text-xl text-slate-300 mt-2 font-light">0.00 € investieren</div>
             </div>
-            <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl text-center">
-                <span class="text-slate-400 uppercase text-[10px] font-bold tracking-widest">Performance (1J)</span>
-                <div id="perf-pct" class="text-5xl font-black mt-1 text-white">0%</div>
-                <p id="perf-details" class="text-slate-500 text-[10px] mt-1 italic">Simulation läuft...</p>
+            <div class="bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-xl text-center flex flex-col justify-center">
+                <span class="text-slate-400 uppercase text-xs font-bold tracking-widest italic">Strategie-Erfolg (365T)</span>
+                <div id="perf-pct" class="text-5xl md:text-6xl font-black mt-2 text-white">0%</div>
+                <p id="perf-details" class="text-slate-500 text-xs mt-2 italic">---</p>
             </div>
         </div>
 
-        <div class="bg-slate-800 p-4 rounded-3xl border border-slate-700 shadow-xl mb-6">
-            <h2 class="text-sm font-bold mb-4 text-slate-400 uppercase">Technische Analyse</h2>
-            <div style="height: 300px;"><canvas id="techChart"></canvas></div>
+        <div class="desktop-only space-y-8">
+            <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                <h2 class="text-xl font-bold mb-4 text-slate-300 border-l-4 border-yellow-500 pl-3">Technische Trend-Analyse (30/50/200)</h2>
+                <div style="height: 400px;"><canvas id="techChart"></canvas></div>
+            </div>
+
+            <div class="bg-slate-800 rounded-3xl border border-slate-700 overflow-hidden shadow-xl">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-700 text-slate-400 uppercase text-xs">
+                        <tr>
+                            <th class="p-4">Datum</th>
+                            <th class="p-4">Preis</th>
+                            <th class="p-4">RSI</th>
+                            <th class="p-4">Score</th>
+                            <th class="p-4 text-right">Aktion</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body-desktop" class="divide-y divide-slate-700"></tbody>
+                </table>
+            </div>
         </div>
 
-        <div class="bg-slate-800 rounded-3xl border border-slate-700 overflow-hidden shadow-xl mb-6">
-            <table class="w-full text-left text-xs">
-                <thead class="bg-slate-700 text-slate-400 uppercase text-[10px]">
-                    <tr>
-                        <th class="p-4">Datum</th>
-                        <th class="p-4">Preis</th>
-                        <th class="p-4 text-right">Signal</th>
-                    </tr>
-                </thead>
-                <tbody id="table-body" class="divide-y divide-slate-700"></tbody>
-            </table>
+        <div class="mobile-only flex-col space-y-6">
+            <div class="bg-slate-800 p-4 rounded-3xl border border-slate-700 shadow-xl">
+                <h2 class="text-xs font-bold mb-4 text-green-400 uppercase tracking-widest">Portfolio Wachstum</h2>
+                <div style="height: 250px;"><canvas id="portfolioChartMobile"></canvas></div>
+            </div>
+            <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-xl">
+                <div class="p-4 bg-slate-700 text-[10px] font-bold uppercase tracking-widest">Letzte Signale</div>
+                <div id="table-body-mobile" class="divide-y divide-slate-700"></div>
+            </div>
         </div>
 
-        <div class="bg-slate-800 p-4 rounded-3xl border border-slate-700 shadow-xl">
-            <h2 class="text-sm font-bold mb-4 text-green-500 uppercase">Mein 5€ Wachstum</h2>
-            <div style="height: 200px;"><canvas id="portfolioChart"></canvas></div>
+        <div class="desktop-only mt-8">
+            <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                <h2 class="text-xl font-bold mb-4 text-green-400 border-l-4 border-green-500 pl-3">Kumulierte Vermögensentwicklung</h2>
+                <div style="height: 300px;"><canvas id="portfolioChartDesktop"></canvas></div>
+            </div>
         </div>
+
     </div>
 
     <script>
     async function init() {
-        try {
-            const response = await fetch('./data.json?t=' + Date.now());
-            const data = await response.json();
-            
-            document.getElementById('last-update').innerText = `Update: ${data.last_update}`;
-            
-            const latest = data.table[0];
-            const actionEl = document.getElementById('action-today');
-            actionEl.innerText = latest.signal;
-            actionEl.className = `text-5xl font-black mt-1 ${latest.signal === 'KAUFEN' ? 'text-green-400' : 'text-red-400'}`;
-            document.getElementById('amount-today').innerText = `Einsatz: ${latest.invest_today}`;
+        const response = await fetch('./data.json?t=' + Date.now());
+        const data = await response.json();
+        
+        document.getElementById('last-update').innerText = `Update: ${data.last_update}`;
+        
+        const latest = data.table[0];
+        const actionEl = document.getElementById('action-today');
+        actionEl.innerText = latest.signal;
+        actionEl.className = `text-6xl md:text-7xl font-black mt-2 tracking-tighter ${latest.signal === 'KAUFEN' ? 'text-green-400' : 'text-red-400'}`;
+        document.getElementById('amount-today').innerText = `${latest.invest_today} investieren`;
+        document.getElementById('perf-pct').innerText = (data.backtest.performance > 0 ? "+" : "") + data.backtest.performance + "%";
+        document.getElementById('perf-details').innerText = `Einsatz: ${data.backtest.invested}€ | Wert: ${data.backtest.current_value}€`;
 
-            document.getElementById('perf-pct').innerText = (data.backtest.performance > 0 ? "+" : "") + data.backtest.performance + "%";
-            document.getElementById('perf-details').innerText = `${data.backtest.invested}€ ➔ ${data.backtest.current_value}€`;
+        // TECH CHART (Laptop)
+        new Chart(document.getElementById('techChart'), {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [
+                    { label: 'BTC', data: data.prices, borderColor: '#f59e0b', borderWidth: 3, pointRadius: 0 },
+                    { label: '30D MA', data: data.ma30, borderColor: '#3b82f6', borderWidth: 1, pointRadius: 0 },
+                    { label: '50D MA', data: data.ma50, borderColor: '#10b981', borderWidth: 1, pointRadius: 0 },
+                    { label: '200D MA', data: data.ma200, borderColor: '#ef4444', borderWidth: 2, pointRadius: 0, borderDash: [5,5] }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
 
-            // Charts
-            new Chart(document.getElementById('techChart'), {
-                type: 'line',
-                data: {
-                    labels: data.labels,
-                    datasets: [
-                        { label: 'BTC', data: data.prices, borderColor: '#f59e0b', borderWidth: 2, pointRadius: 0 },
-                        { label: 'MA200', data: data.ma200, borderColor: '#ef4444', borderWidth: 1, pointRadius: 0, borderDash: [5,5] }
-                    ]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-            });
+        // PORTFOLIO CHARTS (Beide)
+        const portfolioSettings = {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [{ data: data.portfolio_history, backgroundColor: 'rgba(34, 197, 94, 0.1)', borderColor: '#22c55e', fill: true, tension: 0.1, pointRadius: 0 }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false } } }
+        };
+        new Chart(document.getElementById('portfolioChartDesktop'), portfolioSettings);
+        new Chart(document.getElementById('portfolioChartMobile'), portfolioSettings);
 
-            new Chart(document.getElementById('portfolioChart'), {
-                type: 'line',
-                data: {
-                    labels: data.labels,
-                    datasets: [{ 
-                        data: data.portfolio_history, 
-                        backgroundColor: 'rgba(34, 197, 94, 0.1)', 
-                        borderColor: '#22c55e', 
-                        fill: true, 
-                        tension: 0.1,
-                        pointRadius: 0 
-                    }]
-                },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false, 
-                    plugins: { legend: { display: false } },
-                    scales: { x: { display: false } }
-                }
-            });
-
-            // Tabelle
-            const tbody = document.getElementById('table-body');
-            data.table.slice(0, 5).forEach(row => {
+        // TABELLEN
+        const tbodyD = document.getElementById('table-body-desktop');
+        const tbodyM = document.getElementById('table-body-mobile');
+        
+        data.table.forEach((row, idx) => {
+            // Desktop Zeile
+            if(idx < 10) {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td class="p-4">${row.date}</td><td class="p-4 font-mono">${row.price.toLocaleString()}€</td><td class="p-4 text-right ${row.signal === 'KAUFEN' ? 'text-green-400 font-bold' : 'text-slate-500'}">${row.signal}</td>`;
-                tbody.appendChild(tr);
-            });
-        } catch(e) { console.error(e); }
+                tr.innerHTML = `<td class="p-4 text-xs">${row.date}</td><td class="p-4 font-mono font-bold">${row.price.toLocaleString()}€</td><td class="p-4 text-slate-400">${row.rsi}</td><td class="p-4">${row.score}%</td><td class="p-4 text-right ${row.signal === 'KAUFEN' ? 'text-green-400 font-bold' : 'text-slate-500'}">${row.signal}</td>`;
+                tbodyD.appendChild(tr);
+            }
+            // Mobile Zeile (Kompakter)
+            if(idx < 5) {
+                const div = document.createElement('div');
+                div.className = "p-4 flex justify-between items-center bg-slate-800/50";
+                div.innerHTML = `<div><div class="text-[10px] text-slate-500">${row.date}</div><div class="font-bold">${row.price.toLocaleString()} €</div></div><div class="${row.signal === 'KAUFEN' ? 'text-green-400' : 'text-slate-500'} font-black italic">${row.signal}</div>`;
+                tbodyM.appendChild(div);
+            }
+        });
     }
     init();
     </script>
