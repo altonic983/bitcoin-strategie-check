@@ -3,77 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bitcoin 5€ Strategie</title>
+    <title>Bitcoin 5€ Strategie & Analyse</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 font-sans">
-    <div class="container mx-auto px-4 py-8 max-w-5xl">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
         <header class="text-center mb-10">
-            <h1 class="text-4xl font-bold text-yellow-500">Bitcoin 5€ Assistent</h1>
-            <p id="last-update" class="text-slate-400 mt-2 italic">Lade Daten...</p>
+            <h1 class="text-4xl font-bold text-yellow-500 italic uppercase tracking-tighter">BTC 5€ Strategie-Center</h1>
+            <p id="last-update" class="text-slate-500 mt-2">Lade Marktdaten...</p>
         </header>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
             <div class="bg-slate-800 p-8 rounded-3xl border-2 border-yellow-500/50 shadow-2xl text-center">
-                <span class="text-slate-400 uppercase text-sm tracking-widest">Heutige Aktion</span>
-                <div id="action-today" class="text-5xl font-black mt-2 tracking-tighter">---</div>
+                <span class="text-slate-400 uppercase text-xs font-bold tracking-widest">Aktion Heute</span>
+                <div id="action-today" class="text-6xl font-black mt-2">---</div>
                 <div id="amount-today" class="text-xl text-slate-300 mt-1">0.00 €</div>
             </div>
             <div class="bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-xl text-center">
-                <span class="text-slate-400 uppercase text-sm tracking-widest">Backtest Erfolg</span>
-                <div id="perf-pct" class="text-5xl font-black mt-2 text-white">0%</div>
-                <p id="perf-details" class="text-slate-400 text-sm mt-1 italic">Simulation wird geladen...</p>
+                <span class="text-slate-400 uppercase text-xs font-bold tracking-widest">Strategie-Performance (1J)</span>
+                <div id="perf-pct" class="text-6xl font-black mt-2 text-white">0%</div>
+                <p id="perf-details" class="text-slate-500 text-sm mt-1">Simuliere Portfolio...</p>
             </div>
         </div>
 
-        <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-xl">
+        <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl mb-10">
+            <h2 class="text-xl font-bold mb-4 text-slate-300">Marktanalyse (30/50/200 MAs)</h2>
+            <div style="height: 400px;"><canvas id="techChart"></canvas></div>
+        </div>
+
+        <div class="bg-slate-800 rounded-3xl border border-slate-700 overflow-hidden shadow-xl mb-10">
             <table class="w-full text-left text-sm">
-                <thead class="bg-slate-700 text-slate-300 uppercase text-xs">
+                <thead class="bg-slate-700 text-slate-400 uppercase text-xs">
                     <tr>
                         <th class="p-4">Datum</th>
-                        <th class="p-4">Kurs</th>
+                        <th class="p-4">Preis</th>
                         <th class="p-4">RSI</th>
                         <th class="p-4">Score</th>
                         <th class="p-4 text-right">Aktion</th>
                     </tr>
                 </thead>
-                <tbody id="table-body" class="divide-y divide-slate-700 text-slate-200"></tbody>
+                <tbody id="table-body" class="divide-y divide-slate-700"></tbody>
             </table>
+        </div>
+
+        <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+            <h2 class="text-xl font-bold mb-4 text-green-400">Dein 5€ Portfolio-Wachstum (Simulation)</h2>
+            <div style="height: 300px;"><canvas id="portfolioChart"></canvas></div>
         </div>
     </div>
 
     <script>
-    async function loadDashboard() {
+    async function init() {
         const response = await fetch('./data.json?t=' + Date.now());
         const data = await response.json();
         
-        document.getElementById('last-update').innerText = `Stand: ${data.last_update}`;
+        document.getElementById('last-update').innerText = `Daten-Stand: ${data.last_update}`;
         
+        // Stats befüllen
         const latest = data.table[0];
         const actionEl = document.getElementById('action-today');
         actionEl.innerText = latest.signal;
-        actionEl.className = `text-5xl font-black mt-2 tracking-tighter ${latest.signal === 'KAUFEN' ? 'text-green-400' : 'text-red-400'}`;
-        document.getElementById('amount-today').innerText = latest.invest_today + " investieren";
-
+        actionEl.className = `text-6xl font-black mt-2 ${latest.signal === 'KAUFEN' ? 'text-green-400' : 'text-red-400'}`;
+        document.getElementById('amount-today').innerText = `Investiere: ${latest.invest_today}`;
         document.getElementById('perf-pct').innerText = (data.backtest.performance > 0 ? "+" : "") + data.backtest.performance + "%";
-        document.getElementById('perf-details').innerText = `Aus ${data.backtest.invested}€ wurden ${data.backtest.current_value}€`;
+        document.getElementById('perf-details').innerText = `Einsatz: ${data.backtest.invested}€ | Wert: ${data.backtest.current_value}€`;
 
+        // Tech Chart
+        new Chart(document.getElementById('techChart'), {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [
+                    { label: 'BTC Preis', data: data.prices, borderColor: '#f59e0b', borderWidth: 3, pointRadius: 0 },
+                    { label: 'MA30', data: data.ma30, borderColor: '#3b82f6', borderWidth: 1, pointRadius: 0 },
+                    { label: 'MA50', data: data.ma50, borderColor: '#10b981', borderWidth: 1, pointRadius: 0 },
+                    { label: 'MA200', data: data.ma200, borderColor: '#ef4444', borderWidth: 2, pointRadius: 0, borderDash: [5,5] }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94a3b8' } } } }
+        });
+
+        // Portfolio Chart
+        new Chart(document.getElementById('portfolioChart'), {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [{ label: 'Portfolio Wert (EUR)', data: data.portfolio_history.slice(-30), backgroundColor: 'rgba(34, 197, 94, 0.1)', borderColor: '#22c55e', fill: true, tension: 0.3 }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        });
+
+        // Tabelle
         const tbody = document.getElementById('table-body');
         data.table.forEach(row => {
             const tr = document.createElement('tr');
-            const color = row.signal === 'KAUFEN' ? 'text-green-400 font-bold' : 'text-slate-500';
-            tr.innerHTML = `
-                <td class="p-4">${row.date}</td>
-                <td class="p-4 font-mono">${row.price.toLocaleString()} €</td>
-                <td class="p-4">${row.rsi}</td>
-                <td class="p-4">${row.score}%</td>
-                <td class="p-4 text-right ${color}">${row.signal} (${row.invest_today})</td>
-            `;
+            tr.innerHTML = `<td class="p-4 text-xs">${row.date}</td><td class="p-4 font-mono font-bold">${row.price.toLocaleString()}€</td><td class="p-4 text-slate-400">${row.rsi}</td><td class="p-4">${row.score}%</td><td class="p-4 text-right ${row.signal === 'KAUFEN' ? 'text-green-400' : 'text-slate-500'}">${row.signal}</td>`;
             tbody.appendChild(tr);
         });
     }
-    loadDashboard();
+    init();
     </script>
 </body>
 </html>
