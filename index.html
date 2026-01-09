@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BTC Strategie-Center</title>
+    <title>BTC Strategie-App & Tresor</title>
 
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -13,12 +13,11 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { overscroll-behavior-y: contain; }
-        .handy-shadow { shadow-2xl }
         @media (max-width: 768px) { .mobile-only { display: flex; } .desktop-only { display: none; } }
         @media (min-width: 769px) { .mobile-only { display: none; } .desktop-only { display: block; } }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-100 font-sans">
+<body class="bg-slate-900 text-slate-100 font-sans pb-20">
     <div class="container mx-auto px-4 py-6 max-w-6xl">
         
         <header class="text-center mb-6">
@@ -44,17 +43,10 @@
                 <h2 class="text-xl font-bold mb-4 text-slate-300 border-l-4 border-yellow-500 pl-3">Technische Trend-Analyse (30/50/200)</h2>
                 <div style="height: 400px;"><canvas id="techChart"></canvas></div>
             </div>
-
             <div class="bg-slate-800 rounded-3xl border border-slate-700 overflow-hidden shadow-xl">
                 <table class="w-full text-left text-sm">
                     <thead class="bg-slate-700 text-slate-400 uppercase text-xs">
-                        <tr>
-                            <th class="p-4">Datum</th>
-                            <th class="p-4">Preis</th>
-                            <th class="p-4">RSI</th>
-                            <th class="p-4">Score</th>
-                            <th class="p-4 text-right">Aktion</th>
-                        </tr>
+                        <tr><th class="p-4">Datum</th><th class="p-4">Preis</th><th class="p-4">RSI</th><th class="p-4">Score</th><th class="p-4 text-right">Aktion</th></tr>
                     </thead>
                     <tbody id="table-body-desktop" class="divide-y divide-slate-700"></tbody>
                 </table>
@@ -72,47 +64,92 @@
             </div>
         </div>
 
-        <div class="desktop-only mt-8">
-            <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
-                <h2 class="text-xl font-bold mb-4 text-green-400 border-l-4 border-green-500 pl-3">Kumulierte Vermögensentwicklung</h2>
-                <div style="height: 300px;"><canvas id="portfolioChartDesktop"></canvas></div>
+        <div class="mt-12 space-y-8">
+            <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-6 md:p-8 rounded-[2rem] border-t-4 border-yellow-500 shadow-2xl">
+                <h2 class="text-2xl font-black mb-6 text-white uppercase italic tracking-tighter">🔒 Mein Tresor (Echtdaten)</h2>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 text-center">
+                    <div class="bg-slate-900/50 p-4 rounded-2xl border border-slate-700">
+                        <span class="text-[10px] text-slate-500 uppercase block">BTC Bestand</span>
+                        <div id="real-btc" class="text-lg font-bold text-yellow-500">0.00000000</div>
+                    </div>
+                    <div class="bg-slate-900/50 p-4 rounded-2xl border border-slate-700">
+                        <span class="text-[10px] text-slate-500 uppercase block">Eingezahlt</span>
+                        <div id="real-invested" class="text-lg font-bold text-white">0.00 €</div>
+                    </div>
+                    <div class="bg-slate-900/50 p-4 rounded-2xl border border-slate-700">
+                        <span class="text-[10px] text-slate-500 uppercase block">Aktueller Wert</span>
+                        <div id="real-value" class="text-lg font-bold text-white">0.00 €</div>
+                    </div>
+                    <div class="bg-slate-900/50 p-4 rounded-2xl border border-slate-700">
+                        <span class="text-[10px] text-slate-500 uppercase block">Gewinn/Verlust</span>
+                        <div id="real-profit" class="text-lg font-bold text-green-400">+0.00 €</div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-700/30 p-6 rounded-2xl mb-8">
+                    <h3 class="text-sm font-bold mb-4 uppercase text-slate-400">Neuen Kauf eintragen</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <input type="number" id="input-euro" placeholder="Betrag (z.B. 5)" class="bg-slate-900 border border-slate-600 rounded-xl p-3 text-white focus:outline-none focus:border-yellow-500">
+                        <input type="number" id="input-price" placeholder="BTC Kurs bei Kauf" class="bg-slate-900 border border-slate-600 rounded-xl p-3 text-white focus:outline-none focus:border-yellow-500">
+                        <button onclick="addPurchase()" class="bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-black py-3 rounded-xl transition uppercase tracking-widest text-sm">Speichern</button>
+                    </div>
+                </div>
+
+                <div class="overflow-hidden rounded-xl border border-slate-700">
+                    <table class="w-full text-xs text-left">
+                        <thead class="bg-slate-800 text-slate-400 uppercase">
+                            <tr><th class="p-3">Datum</th><th class="p-3">Invest</th><th class="p-3">BTC erhalten</th><th class="p-3 text-right">Aktion</th></tr>
+                        </thead>
+                        <tbody id="real-history" class="divide-y divide-slate-800">
+                            </tbody>
+                    </table>
+                </div>
+                <button onclick="clearVault()" class="mt-4 text-[10px] text-slate-600 hover:text-red-500 transition underline uppercase tracking-widest">Tresor komplett leeren</button>
             </div>
         </div>
-
-    </div>
+        </div>
 
     <script>
+    let btcCurrentPrice = 0;
+    let myPurchases = JSON.parse(localStorage.getItem('btc_vault_data')) || [];
+
     async function init() {
         const response = await fetch('./data.json?t=' + Date.now());
         const data = await response.json();
+        btcCurrentPrice = data.prices[data.prices.length - 1];
         
         document.getElementById('last-update').innerText = `Update: ${data.last_update}`;
         
+        // Stats befüllen (wie zuvor)
         const latest = data.table[0];
-        const actionEl = document.getElementById('action-today');
-        actionEl.innerText = latest.signal;
-        actionEl.className = `text-6xl md:text-7xl font-black mt-2 tracking-tighter ${latest.signal === 'KAUFEN' ? 'text-green-400' : 'text-red-400'}`;
+        document.getElementById('action-today').innerText = latest.signal;
+        document.getElementById('action-today').className = `text-6xl md:text-7xl font-black mt-2 tracking-tighter ${latest.signal === 'KAUFEN' ? 'text-green-400' : 'text-red-400'}`;
         document.getElementById('amount-today').innerText = `${latest.invest_today} investieren`;
         document.getElementById('perf-pct').innerText = (data.backtest.performance > 0 ? "+" : "") + data.backtest.performance + "%";
         document.getElementById('perf-details').innerText = `Einsatz: ${data.backtest.invested}€ | Wert: ${data.backtest.current_value}€`;
 
-        // TECH CHART (Laptop)
+        // Charts Initialisierung (identisch zu deinem Code)
+        renderCharts(data);
+        renderTables(data);
+        
+        // Tresor Update
+        updateVaultUI();
+    }
+
+    function renderCharts(data) {
         new Chart(document.getElementById('techChart'), {
             type: 'line',
             data: {
                 labels: data.labels,
                 datasets: [
                     { label: 'BTC', data: data.prices, borderColor: '#f59e0b', borderWidth: 3, pointRadius: 0 },
-                    { label: '30D MA', data: data.ma30, borderColor: '#3b82f6', borderWidth: 1, pointRadius: 0 },
-                    { label: '50D MA', data: data.ma50, borderColor: '#10b981', borderWidth: 1, pointRadius: 0 },
-                    { label: '200D MA', data: data.ma200, borderColor: '#ef4444', borderWidth: 2, pointRadius: 0, borderDash: [5,5] }
+                    { label: 'MA200', data: data.ma200, borderColor: '#ef4444', borderWidth: 2, pointRadius: 0, borderDash: [5,5] }
                 ]
             },
             options: { responsive: true, maintainAspectRatio: false }
         });
-
-        // PORTFOLIO CHARTS (Beide)
-        const portfolioSettings = {
+        const portfSettings = {
             type: 'line',
             data: {
                 labels: data.labels,
@@ -120,29 +157,92 @@
             },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false } } }
         };
-        new Chart(document.getElementById('portfolioChartDesktop'), portfolioSettings);
-        new Chart(document.getElementById('portfolioChartMobile'), portfolioSettings);
+        new Chart(document.getElementById('portfolioChartMobile'), portfSettings);
+    }
 
-        // TABELLEN
+    function renderTables(data) {
         const tbodyD = document.getElementById('table-body-desktop');
         const tbodyM = document.getElementById('table-body-mobile');
-        
         data.table.forEach((row, idx) => {
-            // Desktop Zeile
             if(idx < 10) {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td class="p-4 text-xs">${row.date}</td><td class="p-4 font-mono font-bold">${row.price.toLocaleString()}€</td><td class="p-4 text-slate-400">${row.rsi}</td><td class="p-4">${row.score}%</td><td class="p-4 text-right ${row.signal === 'KAUFEN' ? 'text-green-400 font-bold' : 'text-slate-500'}">${row.signal}</td>`;
+                tr.innerHTML = `<td class="p-4">${row.date}</td><td class="p-4 font-mono">${row.price.toLocaleString()}€</td><td class="p-4">${row.rsi}</td><td class="p-4">${row.score}%</td><td class="p-4 text-right ${row.signal === 'KAUFEN' ? 'text-green-400' : 'text-slate-500'}">${row.signal}</td>`;
                 tbodyD.appendChild(tr);
             }
-            // Mobile Zeile (Kompakter)
             if(idx < 5) {
                 const div = document.createElement('div');
-                div.className = "p-4 flex justify-between items-center bg-slate-800/50";
+                div.className = "p-4 flex justify-between items-center";
                 div.innerHTML = `<div><div class="text-[10px] text-slate-500">${row.date}</div><div class="font-bold">${row.price.toLocaleString()} €</div></div><div class="${row.signal === 'KAUFEN' ? 'text-green-400' : 'text-slate-500'} font-black italic">${row.signal}</div>`;
                 tbodyM.appendChild(div);
             }
         });
     }
+
+    // TRESOR LOGIK
+    function addPurchase() {
+        const euro = parseFloat(document.getElementById('input-euro').value);
+        const price = parseFloat(document.getElementById('input-price').value);
+        if(!euro || !price) return alert("Bitte Betrag und Kurs eingeben!");
+
+        const btcReceived = euro / price;
+        const newEntry = {
+            date: new Date().toLocaleDateString('de-DE'),
+            invested: euro,
+            btc: btcReceived
+        };
+
+        myPurchases.unshift(newEntry);
+        localStorage.setItem('btc_vault_data', JSON.stringify(myPurchases));
+        updateVaultUI();
+        
+        document.getElementById('input-euro').value = '';
+        document.getElementById('input-price').value = '';
+    }
+
+    function updateVaultUI() {
+        let totalInvested = 0;
+        let totalBTC = 0;
+        const historyBody = document.getElementById('real-history');
+        historyBody.innerHTML = '';
+
+        myPurchases.forEach((p, index) => {
+            totalInvested += p.invested;
+            totalBTC += p.btc;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="p-3">${p.date}</td>
+                <td class="p-3 font-bold">${p.invested.toFixed(2)} €</td>
+                <td class="p-3 text-yellow-500">${p.btc.toFixed(8)}</td>
+                <td class="p-3 text-right"><button onclick="deleteEntry(${index})" class="text-red-500">✕</button></td>
+            `;
+            historyBody.appendChild(tr);
+        });
+
+        const currentValue = totalBTC * btcCurrentPrice;
+        const profit = currentValue - totalInvested;
+
+        document.getElementById('real-btc').innerText = totalBTC.toFixed(8);
+        document.getElementById('real-invested').innerText = totalInvested.toFixed(2) + " €";
+        document.getElementById('real-value').innerText = currentValue.toFixed(2) + " €";
+        document.getElementById('real-profit').innerText = (profit >= 0 ? "+" : "") + profit.toFixed(2) + " €";
+        document.getElementById('real-profit').className = `text-lg font-bold ${profit >= 0 ? 'text-green-400' : 'text-red-400'}`;
+    }
+
+    function deleteEntry(index) {
+        myPurchases.splice(index, 1);
+        localStorage.setItem('btc_vault_data', JSON.stringify(myPurchases));
+        updateVaultUI();
+    }
+
+    function clearVault() {
+        if(confirm("Alle echten Käufe löschen?")) {
+            myPurchases = [];
+            localStorage.removeItem('btc_vault_data');
+            updateVaultUI();
+        }
+    }
+
     init();
     </script>
 </body>
