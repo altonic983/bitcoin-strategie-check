@@ -11,7 +11,6 @@ def calculate_rsi(series, period=14):
     return 100 - (100 / (1+rs))
 
 def fetch_bitcoin_data():
-    # Wir laden 365 Tage für ein volles Jahr Analyse und Backtesting
     url = "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=eur&days=365"
     data = requests.get(url).json()
     
@@ -26,7 +25,6 @@ def fetch_bitcoin_data():
     daily['rsi'] = calculate_rsi(daily['price'])
     daily = daily.dropna()
 
-    # Strategie-Simulation: 5€ bei Score >= 80
     invested_total = 0
     btc_accumulated = 0
     portfolio_values = []
@@ -34,8 +32,6 @@ def fetch_bitcoin_data():
     table_list = []
     for day, row in daily.iterrows():
         p, m30, m50, m200, rsi = row['price'], row['ma30'], row['ma50'], row['ma200'], row['rsi']
-        
-        # Scoring-Logik
         score = (50 if p > m200 else 0) + (30 if p > m50 else 0) + (20 if rsi < 60 else 0)
         signal = "KAUFEN" if score >= 80 else "WARTEN"
         investment = 5.0 if signal == "KAUFEN" else 0.0
@@ -44,7 +40,6 @@ def fetch_bitcoin_data():
             invested_total += investment
             btc_accumulated += (investment / p)
         
-        # Historischer Portfolio-Wert für den zweiten Chart
         portfolio_values.append(round(btc_accumulated * p, 2))
             
         table_list.append({
@@ -66,7 +61,7 @@ def fetch_bitcoin_data():
         "ma50": daily['ma50'].round(2).tolist(),
         "ma200": daily['ma200'].round(2).tolist(),
         "portfolio_history": portfolio_values,
-        "table": table_list[::-1][:10], # Nur letzte 10 für die Tabelle
+        "table": table_list[::-1][:10],
         "backtest": {
             "invested": round(invested_total, 2),
             "current_value": round(current_val, 2),
