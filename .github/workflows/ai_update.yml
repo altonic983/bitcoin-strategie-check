@@ -1,0 +1,22 @@
+name: AI Data Sync
+on:
+  repository_dispatch:
+    types: [update_from_ai]
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Update Files
+        run: |
+          # Hier kann ich Befehle senden, um z.B. die data.json zu richten
+          echo "Update ausgeführt am $(date)" >> update_log.txt
+      - name: Commit changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git commit -m "Automatisches Update durch AI-Schnittstelle"
+          git push
