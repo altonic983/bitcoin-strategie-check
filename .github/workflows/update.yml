@@ -1,36 +1,27 @@
-name: Hourly Bitcoin Update
-
+name: BTC Data Update
 on:
   schedule:
-    - cron: '0 * * * *' # Läuft exakt zu jeder vollen Stunde
-  workflow_dispatch: # Erlaubt es, das Update manuell per Klick zu starten
+    - cron: '*/5 * * * *' # Alle 5 Minuten
+  workflow_dispatch: # Erlaubt manuelles Starten
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write # Wichtig, damit der Bot die data.json speichern darf
-
     steps:
-    - name: Code auschecken
-      uses: actions/checkout@v3
-
-    - name: Python einrichten
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
-
-    - name: Abhängigkeiten installieren
-      run: |
-        pip install requests pandas
-
-    - name: Daten-Skript ausführen
-      run: python update_data.py
-
-    - name: Ergebnisse speichern (Commit & Push)
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add data.json
-        git commit -m "Update Bitcoin Data: $(date)" || echo "Keine Änderungen zum Committen"
-        git push
+      - name: Checkout Code
+        uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+      - name: Install Dependencies
+        run: pip install pandas requests
+      - name: Run Script
+        run: python update_data.py
+      - name: Commit & Push
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add data.json
+          git commit -m "Live Update: $(date)"
+          git push
